@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset='utf-8' />
+    <title>AccessGeoVisDC: Interactive Visualization of Accessibility</title>
+    <meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
+    <!-- JS files -->
+    <script src="https://d3js.org/d3.v4.min.js" type="text/javascript"></script>
+    <script src="javascript/color.js" type="text/javascript"></script>
+    <script src="javascript/utility-functions.js" type="text/javascript"></script>
+    <script src='https://api.tiles.mapbox.com/mapbox-gl-js/v0.45.0/mapbox-gl.js'></script>
+    <script src='https://api.mapbox.com/mapbox.js/plugins/turf/v3.0.11/turf.min.js'></script>
+    <!-- CSS files -->
+    <link href='https://api.tiles.mapbox.com/mapbox-gl-js/v0.45.0/mapbox-gl.css' rel='stylesheet' />
+    <link href='stylesheet/main.css' rel='stylesheet' />
+</head>
+
+<body>
+    <div id='detail-pane'>
+        <button id="toggle-view" name="toggle-view" onclick="goToDetailView()">Back to Main Map</button>
+        <div id='detail-view-map'></div>
+    </div>
+    <!-- div map should come before the code that renders the map -->
+    <div id='map'></div>
+    <div id="info-box">
+        <p id="neighborhood-info"> Click on a neighborhood to know more about it! </p>
+        <p id="region_name"></p>
+        <p id="access_score"></p>
+    </div>
+    <br/>
+    <button id='reset-view' onclick="resetView()">Reset View</button> &nbsp;
+    <span id='toggle-buttons'>
+        <button id="toggle-neighorboods" class="toggle-layer" onclick="toggleLayers('as-neighborhoods')">Toggle Neighborhoods</button> &nbsp;
+        <button id="toggle-streets" class="toggle-layer" onclick="toggleLayers('streets')">Toggle Streets</button> &nbsp;
+        <button id="toggle-attributes" class="toggle-layer" onclick="toggleLayers('attribute-points')">Toggle Attribute Points</button>
+    </span>
+    <!-- Actual Mapbox+d3 magic starts! -->
+    <script>
+    /* Setting up the initial map on page load */
+
+    // Setting up toggle buttons functionality
+    var view = "map";
+    var boxStartlat;
+    var boxStartLng;
+    var boxStarted = false;
+    var previousData;
+    // City bounds
+    var southWest = new mapboxgl.LngLat(-77.140, 38.794),
+        northEast = new mapboxgl.LngLat(-76.911, 38.997),
+        cityBounds = new mapboxgl.LngLatBounds(southWest, northEast);
+
+    // Setup map
+    mapboxgl.accessToken = 'pk.eyJ1IjoibWFuYXN3aSIsImEiOiJjamg5c2hmZ2swZnpvMzhxZ28wcmhvb2NwIn0.MYu7KmIcoYH8k78mQh7wWA';
+    var minZoom = 11,
+        maxZoom = 18;
+    var map = new mapboxgl.Map({
+        container: 'map', // container id
+        style: 'mapbox://styles/mapbox/dark-v9', // stylesheet location
+        center: [-77.039, 38.897], // starting position [lng, lat]
+        zoom: 5, // starting zoom
+        maxZoom: maxZoom
+    });
+
+    // Zoom-ins to the city bounds with "ease-in" zoom transition
+    map.fitBounds(cityBounds);
+
+    // Add zoom in/out controls
+    map.addControl(new mapboxgl.NavigationControl({ 'showCompass': false }))
+
+    // Full-screen visualization
+    //map.addControl(new mapboxgl.FullscreenControl());
+
+    var detailPane = d3.select('div#detail-pane')
+        .attr('class', 'hidden');
+
+    var layerApplied = {
+        "as-neighborhoods": false,
+        "streets": false,
+        "attribute-points": false,
+        "color-layer": false
+    };
+
+    function toggleLayers(layerName) {
+        if (layerApplied[layerName]) {
+            map.removeLayer(layerName);
+            map.removeSource(layerName);
+            layerApplied[layerName] = false;
+        } else {
+            switch (layerName) {
+                case 'as-neighborhoods':
+                    visualizeASNeighborhoods();
+                    break;
+                case 'streets':
+                    visualizeStreets();
+                    break;
+                case 'attribute-points':
+                    visualizeAttributes();
+                    break;
+            }
+        }
+    }
+
+    // Use Mapbox to implement a D3 geometric transformation.
+    function projectPoint(lng, lat) {
+        var point = map.project(new mapboxgl.LngLat(lng, lat));
+        this.stream.point(point.x, point.y);
+    }
+
+    /* Connect mapboxgl+d3 and add d3 elements */
+
+    // Get Mapbox map canvas container
+    var canvas = map.getCanvasContainer();
+    // Overlay d3 on the map
+    var svg = d3.select(canvas)
+        .append("svg")
+        .on("click", stopped, true);
+
+    var mapContainer = map.getContainer();
+    var width = mapContainer.getClientRects()[0].width,
+        height = mapContainer.getClientRects()[0].height,
+        active = d3.select(null);
+
+    var transform = d3.geoTransform({ point: projectPoint }),
+        path = d3.geoPath().projection(transform)
+    // .scale(1000)
+    //.translate([width / 2, height / 2]);
+
+    var zoom = d3.zoom()
+        .scaleExtent([1, 8]) // allowed #zoom scale factors: here, 8 times the original size
+        .on("zoom", zoomed);
+
+    var tooltip = d3.select('body')
+        .append('div')
+        .attr('class', 'hidden tooltip');
+
+    svg.append("rect")
+        .attr("class", "background")
+        .attr("width", width)
+        .attr("height", height)
+        .on("click", resetMap);
+
+    var g = svg.append("g");
+
+    // This is how we attach zoom behavior to the container
+    svg
+        .call(zoom) // delete this line to disable free zooming
+    // .call(d3.event);
+
+    // ----- Code below from http://bl.ocks.org/zross/6a31f4ef9e778d94c204 ----
+    // var g = svgOuter.append("g").attr("class", "leaflet-zoom-hide");
+
+    map.on('load', function() {
+
+        /* Draw Neighborhood Polygons */
+        drawNeighborhoods();
+
+        /* Visualize AccessScore of Neighborhoods */
+        //visualizeASNeighborhoods();
+
+        /* Visualize Streets */
+        //drawStreets();
+
+        /* Visualize Accessibility Attributes */
+        //drawFeatureLayers();
+
+    });
+
+    var neighborhoodsFeature;
+
+    function drawNeighborhoods() {
+        alert("Drawing neighborhoods");
+        d3.json("data/neighborhoods.json", function(err, data) {
+
+            neighborhoodsFeature = g.selectAll("path")
+                .data(data.features)
+                .enter()
+                .append("path")
+                .attr("d", path)
+                .attr("class", "neighborhoods-overlay")
+                .on("click", clicked)
+                .on('mousemove', function(d) {
+                    var mouse = d3.mouse(svg.node()).map(function(d) {
+                        return parseInt(d);
+                    });
+                    tooltip.classed('hidden', false)
+                        .attr('style', 'left:' + (mouse[0] + 15) +
+                            'px; top:' + (mouse[1] - 35) + 'px')
+                        .html(d.properties.region_name);
+
+                    document.getElementById('toggle-view').addEventListener('click', function() {
+
+                    });
+                })
+                .on('mouseout', function() {
+                    tooltip.classed('hidden', true);;
+                });
+
+            var brush = d3.brush()
+                .on("start", function() {
+                    console.log("brush started");
+                    var d = d3.event.selection;
+                    var array = [d3.event.selection[0][0], d3.event.selection[0][1]];
+                    var arrayEnding = [d3.event.selection[1][0], d3.event.selection[1][1]];
+                    console.log(map.unproject(array));
+                    boxStartlat = map.unproject(array).lat;
+                    boxStartLng = map.unproject(array).lng;
+                })
+                .on("brush", function() {
+                    moved = true;
+                    /*if(!boxStarted) {
+                        console.log("box started");
+                        var array = [d3.event.selection[0][0], d3.event.selection[0][1]];
+                        var arrayEnding = [d3.event.selection[1][0], d3.event.selection[1][1]];
+                        boxStartlat = map.unproject(array).lat;
+                        boxStartLng = map.unproject(array).lng;
+                    }*/
+                })
+                .on("end", function(p) {
+                    console.log("box ended");
+                    var array = [d3.event.selection[0][0], d3.event.selection[0][1]];
+                    //console.log("starting = " + array);
+                    var arrayEnding = [d3.event.selection[1][0], d3.event.selection[1][1]];
+                    ///console.log(d3.event.selection);
+                    //console.log("brush ended");
+                    endingLng = map.unproject(arrayEnding).lng;
+                    endingLat = map.unproject(arrayEnding).lat;
+                    if (moved) {
+                        console.log("Changing box start lng in end function");
+                        boxStartlat = map.unproject(array).lat;
+                        boxStartLng = map.unproject(array).lng;
+                        moved = false;
+                    }
+                    fetchData(boxStartlat, boxStartLng, endingLat, endingLng);
+                })
+                .extent([
+                    [0, 0],
+                    [width, height]
+                ]);
+            svg.append("g").call(brush);
+            g.selectAll("brush").attr('class', 'brush').on("load", function() {
+                alert("loaded");
+            });
+            resetMapBorders();
+            map.on("viewreset", resetMapBorders);
+            map.on("movestart", resetMapBorders);
+            map.on("move", resetMapBorders);
+            map.on("moveend", resetMapBorders);
+
+            // Reposition the SVG to cover the features.
+            function resetMapBorders() {
+                neighborhoodsFeature.attr("d", path);
+            }
+
+            /*
+                // Using Mapbox
+                map.addLayer({
+                    'id': 'neighborhoods',
+                    'type': 'fill',
+                    'source': {
+                        'type': 'geojson',
+                        'data': data
+                    },
+                    'paint': {
+                        'fill-color':  '#088',
+                        'fill-opacity': 0.3
+                    }
+                });
+            */
+        });
+    }
+
+    /* Helper functions to make the map zoomable when clicked */
+    // Source: https://bl.ocks.org/mbostock/9656675
+
+    // Creating a zoom transform - https://github.com/d3/d3-zoom#zoomTransform
+    function createTransform(x, y, k) {
+        return d3.zoomIdentity
+            .translate(x, y)
+            .scale(k);
+    }
+
+    function clicked(d) {
+        if (active.node() === this) return resetMap();
+        active.classed("active", false);
+        active = d3.select(this).classed("active", true);
+
+        var bounds = path.bounds(d),
+            dx = bounds[1][0] - bounds[0][0],
+            dy = bounds[1][1] - bounds[0][1],
+            x = (bounds[0][0] + bounds[1][0]) / 2,
+            y = (bounds[0][1] + bounds[1][1]) / 2,
+            scale = Math.max(1, Math.min(8, 0.9 / Math.max(dx / width, dy / height))),
+            translate_x = width / 2 - scale * x,
+            translate_y = height / 2 - scale * y;
+
+        svg.transition()
+            .duration(750)
+            //.call(createTransform(translate_x, translate_y, scale));
+            .call(zoom.transform, createTransform(translate_x, translate_y, scale));
+    }
+
+    function zoomed() {
+        // v4 zoom transforms - https://github.com/d3/d3-zoom#zoomTransform
+        var transform = d3.zoomTransform(this);
+        g.style("stroke-width", 1.5 / transform.k + "px");
+        g.attr("transform", transform);
+    }
+
+    function resetMap() {
+        active.classed("active", false);
+        active = d3.select(null);
+
+
+        svg.transition()
+            .duration(750)
+            .call(zoom.transform, createTransform(0, 0, 1));
+    }
+
+    // If the drag behavior prevents the default click,
+    // also stop propagation so we don’t click-to-zoom.
+    function stopped() {
+        if (d3.event.defaultPrevented) d3.event.stopPropagation();
+    }
+
+
+    function visualizeASNeighborhoods() {
+        d3.json("data/as-neighborhoods.json", function(err, data) {
+            var layerId = 'as-neighborhoods';
+            map.addLayer({
+                'id': layerId,
+                'type': 'fill',
+                'source': {
+                    'type': 'geojson',
+                    'data': data
+                },
+                'paint': {
+                    'fill-color': getColor(['get', 'score']), // '#088'
+                    'fill-opacity': 0.8
+                }
+            });
+            layerApplied[layerId] = true;
+        });
+    }
+
+    function visualizeStreets() {
+        d3.json("data/as-streets.json", function(err, data) {
+            var layerId = 'streets';
+            map.addLayer({
+                'id': 'streets',
+                'type': 'line',
+                'source': {
+                    'type': 'geojson',
+                    'data': data
+                },
+                'paint': {
+                    'line-width': 2,
+                    // Use a get expression (https://www.mapbox.com/mapbox-gl-js/style-spec/#expressions-get)
+                    // to set the line-color to a feature property value.
+                    'line-color': '#2ca25f' //['get', 'color']
+                }
+            });
+            layerApplied[layerId] = true;
+        });
+    }
+
+    function visualizeAttributes() {
+        d3.json("data/attribute-points.json", function(err, data) {
+
+            if (err) throw err;
+
+            var layerId = 'attribute-points';
+            map.addLayer({
+                "id": "attribute-points",
+                "type": "circle",
+                "source": {
+                    "type": "geojson",
+                    "data": data
+                },
+                'paint': {
+                    // make circles larger as the user zooms from z12 to z22
+                    'circle-radius': {
+                        'base': 2,
+                        'stops': [
+                            [12, 2],
+                            [22, 60]
+                        ]
+                    },
+                    // color circles by label_type, using a match expression
+                    // https://www.mapbox.com/mapbox-gl-js/style-spec/#expressions-match
+                    'circle-color': '#ee8a45', //'#d9d9d9' 
+                    /*[
+                        'match', ['get', 'label_type'],
+                        'CurbRamp', '#ee8a45',
+                        // rest of the problem labels 'rgba(179, 179, 179, 1)'
+                        '#ee8a65'
+                    ]*/
+                    'circle-opacity': 0.8
+                }
+            });
+            layerApplied[layerId] = true;
+        });
+    }
+
+    map.setMinZoom(minZoom);
+
+    function plot(response) {
+        //alert("Called plot");
+        console.log(response);
+        if (!previousData) {
+            previousData = response;
+            map.addSource('polygons', { type: 'geojson', data: response });
+            map.addLayer({
+                'id': 'color-layer',
+                'type': 'fill',
+                'source': 'polygons'
+                    /*{
+                                        'type':'geojson',
+                                        'data': response
+                                    }*/
+                    ,
+                'paint': {
+                    'fill-color': ['case', [">", ['number', ['get', 'score']],
+                        ['number', 0.5]
+                    ], 'rgba(200, 100, 240, 1)', 'rgba(120, 300, 150, 1)'],
+                    'fill-outline-color': 'rgba(0, 0, 0, 1)'
+                }
+            });
+
+            console.log("Plot called for the first time");
+            map.on('click', 'color-layer', function(e) {
+                var area = document.getElementById("neighborhood-info");
+                area.innerHTML = "Showing information about selected neighborhood";
+                document.getElementById("region_name").innerHTML = e.features[0].properties.region_name;
+                document.getElementById("access_score").innerHTML = e.features[0].properties.score;
+
+                /*new mapboxgl.Popup()
+                    .setLngLat(e.lngLat)
+                    .setHTML(e.features[0].properties.region_name + " with score " + e.features[0].properties.score)
+                    .addTo(map);*/
+            });
+            layerApplied[layerId] = true;
+        } else {
+            console.log("plot called after first time");
+            previousData.features = previousData.features.concat(response.features);
+            console.log("changing source");
+            map.getSource('polygons').setData(previousData);
+        }
+
+
+        var layerId = 'color-layer';
+    }
+
+
+    function fetchData(lat1, lng1, lat2, lng2) {
+        console.log("lat1 = " + lat1 + " ,lat2 = " + lat2 + " ,lng1  = " + lng1 + " ,lng2 = " + lng2);
+        fetch("https://cors-anywhere.herokuapp.com/http://sidewalk.umiacs.umd.edu/v1/access/score/neighborhoods?lat1=" + lat1 + "&lng1=" + lng1 + "&lat2=" + lat2 + "&lng2=" + lng2)
+            .then(checkStatus)
+            .then(JSON.parse)
+            .then(plot)
+            .catch(function(error) {
+                alert("Error while getting data" + error);
+            });
+    }
+
+    function checkStatus(response) {
+        //console.log(response);
+        if (response.status >= 200 && response.status <= 300 || response.status == 0) {
+            //alert("Fetch call completed");
+            return response.text();
+        } else {
+            //console.log(response.status);
+            alert("Promise rejected");
+        }
+    }
+    </script>
+</body>
+
+</html>

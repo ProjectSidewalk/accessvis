@@ -1,0 +1,45 @@
+body {
+    margin: 0;
+    padding: 0;
+    font: 14px 'Helvetica Neue', Arial, Helvetica, sans-serif;
+    text-align: justify;
+}
+
+#team>p {
+    margin: auto;
+    text-align: center;
+}
+
+a {
+    color: #1d91c0;
+}
+
+div {
+    margin: auto;
+    width: 90%;
+}
+
+#first_image {
+    width: 500px;
+    height: 500px;
+    text-align: center;
+    /*margin-left: 20%;*/
+}
+
+#interface-image {
+    text-align: center;
+}
+
+#second_image {
+    width: 80%;
+    /*height: 500px;*/
+    left: 50%;
+}
+
+h2 {
+    color: #225ea8;
+}
+
+h1 {
+    text-align: center;
+}

@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <script type="text/javascript" src="https://cdn.rawgit.com/simplegeo/polymaps/v2.3.0/polymaps.min.js"></script>
+    <style type="text/css">
+
+@import url("https://cdn.rawgit.com/simplegeo/polymaps/v2.3.0/examples/example.css");
+
+html, body {
+  height: 100%;
+  background: #E6E6E6;
+}
+
+div {
+  float: left;
+  width: 50%;
+  height: 100%;
+}
+
+svg {
+  display: block;
+}
+
+    </style>
+  </head>
+  <body>
+    <div id="left" tabindex="1"></div>
+    <div id="right" tabindex="2"></div>
+    <script type="text/javascript">
+
+var po = org.polymaps;
+
+var left = po.map()
+    .container(document.getElementById("left").appendChild(po.svg("svg")))
+    .add(po.interact());
+
+left.add(po.image()
+    .url(po.url("http://{S}tile.cloudmade.com"
+    + "/1a1b06b230af4efdbb989ea99e9841af" // http://cloudmade.com/register
+    + "/998/256/{Z}/{X}/{Y}.png")
+    .hosts(["a.", "b.", "c.", ""])));
+
+var right = po.map()
+    .container(document.getElementById("right").appendChild(po.svg("svg")))
+    .add(po.interact());
+
+right.add(po.image()
+    .url(po.url("http://{S}tile.cloudmade.com"
+    + "/1a1b06b230af4efdbb989ea99e9841af" // http://cloudmade.com/register
+    + "/999/256/{Z}/{X}/{Y}.png")
+    .hosts(["a.", "b.", "c.", ""])));
+
+    </script>
+    <span id="copy">
+      &copy; 2010
+      <a href="http://www.cloudmade.com/">CloudMade</a>,
+      <a href="http://www.openstreetmap.org/">OpenStreetMap</a> contributors,
+      <a href="http://creativecommons.org/licenses/by-sa/2.0/">CCBYSA</a>.
+    </span>
+  </body>
+</html>

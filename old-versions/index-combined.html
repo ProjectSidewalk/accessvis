@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset='utf-8' />
+    <title>AccessGeoVisDC: Interactive Visual Exploration of Accessibility</title>
+    <meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
+    <!-- JS files -->
+    <script src="https://d3js.org/d3.v4.min.js" type="text/javascript"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="javascript/color.js" type="text/javascript"></script>
+    <script src="javascript/utility-functions.js" type="text/javascript"></script>
+    <script src='https://api.tiles.mapbox.com/mapbox-gl-js/v0.45.0/mapbox-gl.js'></script>
+    <script src='https://api.mapbox.com/mapbox.js/plugins/turf/v3.0.11/turf.min.js'></script>
+    <!-- CSS files -->
+    <link href='https://api.tiles.mapbox.com/mapbox-gl-js/v0.45.0/mapbox-gl.css' rel='stylesheet' />
+    <link href='stylesheet/main.css' rel='stylesheet' />
+</head>
+
+<body>
+    <div class='overlay' id="overlay"></div>
+    <!-- div map should come before the code that renders the map -->
+    <div id='map'></div>
+    <br/>
+    <div id='overview-level'>
+        <button id='reset-view' class ="btn" onclick="resetView()">Reset View</button>
+        <div id='overview-pane' class="modal">
+            <h1>AccessGeoVisDC</h1>
+            <h3>Interactive Visual Exploration of Accessibility</h3>
+            <div class="modal-body">
+                <p><span>This website is built to explore the accessibility for the city of
+                    Washington DC.</span>
+                </p>
+                <img src="assets/ps-logo.jpg"/><br/>
+            </div>
+            <div class="more-info">...Know More</div>
+            <div class="footer">
+                <button id='btn-close' class="btn" onclick="closeModal()">Okay</button>
+            </div>
+        </div>
+        <div id="legend">
+            <p>Legend for Map</p>
+            <div id="color1" class = "legend_div">
+                <div id="color-component1" class="color-component"> </div>
+                <p> 0 - 20 </p>
+            </div>
+            <div id="color2" class = "legend_div">
+                <div id="color-component2" class="color-component"> </div>
+                <p> 20 - 40 </p>
+            </div>
+             <div id="color3" class = "legend_div">
+                <div id="color-component3" class="color-component"> </div>
+                <p> 40 - 60 </p>
+            </div>
+             <div id="color5" class = "legend_div">
+                <div id="color-component4" class="color-component"> </div>
+                <p> 60 - 80 </p>
+            </div>
+            <div id="color5" class = "legend_div">
+                <div id="color-component5" class="color-component"> </div>
+                <p> 80 - 90 </p>
+            </div>
+             <div id="color6" class = "legend_div">
+                <div id="color-component6" class="color-component"> </div>
+                <p> 90 - 100 </p>
+            </div>
+            <p id="Annotation"> Showing color gradient for access score values on map </p>
+        </div>
+        <div id="info-box" class="info-box box">
+            <p id="info-panel-instruction">Select/Click an area to know more!</p>
+            <p id="region-name"></p>
+            <p id="access-score"></p>
+            <p id="average-info"></p>
+            <div id="viz-holder">
+                <div id="container1">
+                    <p id="heading1"></p>
+                    <svg id="top-5-graph"></svg>
+                    <div id="tooltip" class="toolTip"></div>
+                </div>
+                <div id="container2">
+                     <p id="heading2"></p>
+                    <svg id="histogram-holder"></svg>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="loading-icon"></div>
+    <div id='detail-pane'>
+        <button id="btn-toggle-view" name="toggle-view" onclick="zoomOutToMainView()">Back to Main Map</button>
+        <div id='detail-pane-info' class='detail-pane-info box'>
+            <!-- <h4 id='region-name'></h4> -->
+            <h4 id='label-types'>Label Types</h4>
+            <!-- <div id='label-types'> -->
+            <div><span style='background-color: rgba(0, 222, 38, 1)'></span>Curb Ramp: 1000</div>
+            <div><span style='background-color: rgba(233, 39, 113, 1)'></span>Missing Curb Ramp: 1000</div>
+            <div><span style='background-color: rgba(241, 141, 5, 1)'></span>Surface Problem: 1000</div>
+            <div><span style='background-color: rgba(0, 161, 203, 1)'></span>Obstacles: 1000</div>
+            <div><span style='background-color: rgba(179, 179, 179, 1)'></span>No Sidewalk: 1000</div>
+            <div><span style='background-color: rgba(179, 179, 179, 1)'></span>Other: 1000</div>
+            <!-- </div> -->
+        </div>
+    </div>
+    <span id='toggle-buttons' class='hidden'>
+        <button id="toggle-streets" class="toggle-layer" onclick="toggleLayers('streets')">Toggle Streets</button> &nbsp;
+        <button id="toggle-attributes" class="toggle-layer" onclick="toggleLayers('features')">Toggle Attribute Points</button>
+    </span>
+    <script src="javascript/geovis.js"></script>
+    <script src="javascript/drawing-functions.js" type="text/javascript"></script>
+</body>
+
+</html>

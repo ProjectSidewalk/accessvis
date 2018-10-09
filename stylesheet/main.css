@@ -1,0 +1,627 @@
+/* Main Map Styles */
+
+body {
+    margin: 0;
+    padding: 0;
+    font: 14px 'Helvetica Neue', Arial, Helvetica, sans-serif;
+}
+
+svg {
+    width: 100%;
+    height: 100%;
+    position: fixed;
+}
+
+#ps-logo {
+    width: 20%;
+    bottom: 20px;
+    right: 50px;
+    z-index: 100;
+}
+
+#color-component1 {
+    background-color: #f7f78f;
+}
+
+#color-component2 {
+    background-color: #c7e9b4;
+}
+
+#color-component3 {
+    background-color: #7fcdbb;
+}
+
+#color-component4 {
+    background-color: #41b6c4;
+}
+
+#color-component5 {
+    background-color: #1d91c0;
+}
+
+#color-component6 {
+    background-color: #225ea8;
+}
+
+.annotation {
+    font-size: 6pt;
+}
+
+.color-component {
+    width: 35px;
+    height: 15px;
+    background-color: black;
+    display: inline-block;
+    float: left;
+}
+
+.legend_div {
+    margin: 10px;
+}
+
+.legend_div p {
+    text-align: center;
+}
+
+#map {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 100%;
+}
+
+#histogram {
+    width: inherit;
+    height: inherit;
+}
+
+#marker {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+#loading-icon {
+    background-image: url("https://media.giphy.com/media/azrUC2S0ndgSA/giphy.gif");
+    background-size: 100px 100px;
+    display: none;
+    left: 45%;
+    bottom: 20%;
+    position: fixed;
+    height: 100px;
+    width: 100px;
+}
+
+.brush {
+
+}
+
+.hiddenGif {
+    display: none;
+}
+
+/* ***** Info Panel Styles***** */
+
+.overlay {
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    position: fixed;
+    opacity: 0.1;
+    z-index: 980;
+    transition: opacity 500ms;
+}
+
+/* Text Styles*/
+
+.instruction {
+    color: grey;
+    text-align: justify;
+}
+
+.small-text {
+    font-size: 6px;
+    text-align: justify;
+}
+
+#access-score, #region-name, #average-info {
+    margin: 0;
+    padding: 0;
+}
+
+#info-panel-instruction {
+    font-size: 16px;
+    color: grey;
+    text-align: center;
+}
+
+#access-score, #region-name {
+    color: #BC6C25;
+    font-size: 20px;
+}
+
+#access-score {
+    font-size: 25px;
+}
+
+#average-info {
+    font-size: 16px;
+    padding-top: 5px;
+}
+
+#average-info span, #overall-stats span {
+    color: #225ea8;
+    font-weight: bold;
+}
+
+#heading1, #heading2 {
+    border: 1px black dashed;
+    text-align: center;
+}
+
+#top-5-graph, #histogram-holder {
+    width: inherit;
+    height: 200px;
+}
+
+/* Box Styles */
+#legend {
+    width: 100px;
+    height: 200px;
+    float: left;
+    left: 40px;
+    bottom: 30px;
+    position: absolute;
+    font-size: 10px;
+    background-color: white;
+    opacity: 0.8;
+    border-radius: 3px;
+    padding: 0px 5px 5px 5px;
+    transition: all 5s ease-in-out;
+}
+
+.box {
+    border-radius: 5px;
+    padding-left: 10px;
+    overflow-wrap: normal;
+    background: rgba(255, 255, 255, 0.8);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.10);
+}
+
+#overview-pane {
+    /*background-color: white;*/
+    border-radius: 10px;
+    max-height: calc(100% - 100px);
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    right: auto;
+    bottom: auto;
+    padding: 20px;
+    transform: translate(-50%, -50%);
+    z-index: 2010;
+    transition: all 5s ease-in-out;
+}
+
+/*#overview-pane::after {*/
+/*background-image: url("assets/complete_map.png");*/
+/*opacity: 0.8;*/
+/*top: 0;*/
+/*left: 0;*/
+/*bottom: 0;*/
+/*right: 0;*/
+/*position: absolute;*/
+/*z-index: -1;*/
+/*}*/
+
+.info-box {
+    width: 300px;
+    height: 600px;
+    max-height: calc(100%);
+    float: right;
+    right: 50px;
+    top: 70px;
+    left: auto;
+    bottom: auto;
+    position: fixed;
+    font-size: 12px;
+    padding: 10px;
+    z-index: 1010;
+    transition: all 5s ease-in-out;
+}
+
+.overview-info-box {
+    width: 350px;
+    /*height: 200px;*/
+    max-height: calc(100%);
+    float: left;
+    top: 70px;
+    left: 40px;
+    position: fixed;
+    font-size: 12px;
+    padding: 0px 10px 0px 10px;
+    z-index: 1010;
+    transition: all 5s ease-in-out;
+}
+
+/* Overview Panel */
+
+.modal-unhide {
+    display: block;
+}
+
+#overview-pane h1 {
+    font-size: 30px;
+}
+
+#overview-pane h3 {
+    margin-top: -10px;
+}
+
+#overview-pane .modal-body {
+    height: 100%;
+    overflow: auto;
+    font-size: 18px;
+}
+
+#overview-pane p {
+    font-size: 14px;
+}
+
+#overview-pane p span {
+    display: block;
+}
+
+#overview-pane .more-info {
+    margin: 5px;
+    display: block;
+    font-size: 12px;
+    text-align: justify;
+}
+
+.know-more, .more-info {
+    padding-right: 10px;
+}
+
+h3.know-more {
+    cursor: pointer;
+    color: #225ea8;
+    float: right;
+    /*font-size: 14px;*/
+}
+
+h3.know-more:hover {
+    cursor: pointer;
+    color: #1d91c0;
+    /*font-size: 14px;*/
+}
+
+span.action-instruction {
+    text-align: center;
+    font-weight: bold;
+    font-size: 15px;
+}
+
+#overview-pane .left {
+    float: left;
+    width: 50%;
+}
+
+#overview-pane .right {
+    float: right;
+    width: 50%;
+}
+
+#overview-pane img {
+    width: 100%;
+    /*padding-top: 20px;*/
+}
+
+#overview-pane button {
+    /*margin: 20px;*/
+    align: center;
+    display: block;
+}
+
+div.tooltip {
+    color: #222;
+    background-color: #fff;
+    padding: .5em;
+    text-shadow: #f5f5f5 0 1px 0;
+    border-radius: 0;
+    opacity: 0.9;
+    position: absolute;
+    font: normal 14px/1.3 'Helvetica Neue', Arial, Helvetica, sans-serif;
+}
+
+.toolTip {
+    position: absolute;
+    display: none;
+    min-width: 80px;
+    height: auto;
+    background: none repeat scroll 0 0 #ffffff;
+    border: 1px solid #6F257F;
+    padding: 14px;
+    text-align: center;
+}
+
+/* Neighborhoods */
+
+/* Neighborhood overlays */
+
+.background {
+    fill: none;
+    pointer-events: all;
+}
+
+#neighborhoods-fill, #neighborhoods-fill-hover {
+    cursor: pointer;
+}
+
+.neighborhoods-overlay {
+    fill: none;
+    stroke: #606C38;
+    stroke-width: 1;
+    stroke-opacity: 0.8;
+    stroke-dasharray: 5;
+    /*stroke-dashoffset: 15;*/
+    /*animation: dash 5s linear;*/
+    transition: 0.5s fill, 0.5s stroke-width;
+    cursor: pointer;
+}
+
+@keyframes dash {
+    to {
+        stroke-dashoffset: 0;
+    }
+}
+
+.neighborhoods-overlay:hover {
+    fill: #BC6C25;
+    fill-opacity: .7;
+    stroke-width: 1;
+}
+
+.hidden {
+    display: none;
+    transition: 1000ms;
+}
+
+/* Detail View */
+
+.detail-pane-info {
+    float: right;
+    position: absolute;
+    padding-left: 10px;
+    overflow: auto;
+    z-index: 1;
+    margin-top: 18px;
+}
+
+.detail-pane-info h4 {
+    margin: 0 0 10px;
+}
+
+/*.detail-pane-info div {*/
+/*cursor: pointer;*/
+/*}*/
+
+.detail-pane-info div span {
+    border-radius: 50%;
+    display: inline-block;
+    height: 15px;
+    padding-right: 10px;
+    padding-bottom: 5px;
+    width: 10px;
+    vertical-align: center;
+    /*cursor: pointer;*/
+}
+
+/*.detail-pane-info div span:hover {
+    height: 18px;
+    padding-right: 10px;
+    padding-bottom: 5px;
+    width: 12px;
+}*/
+
+.neighborhood-selected {
+    /*fill: #BC6C25;*/
+    fill: none;
+    fill-opacity: 0;
+    stroke: #12111E;
+    stroke-width: 5;
+    stroke-opacity: 0.4;
+    cursor: pointer;
+    z-index: 0;
+}
+
+#streets-container > path.street-segments {
+    fill: none;
+    stroke-width: 8;
+    stroke-opacity: 1;
+    stroke-dasharray: 2;
+    transition: 0.5s stroke-width;
+    z-index: 2000;
+}
+
+#streets-container > path.street-segments:hover {
+    stroke-width: 12;
+    cursor: pointer;
+}
+
+/*#CurbRamp, #NoCurbRamp, #SurfaceProblem, #Obstacle {*/
+/*z-index: 4000;*/
+/*}*/
+
+.CurbRamp {
+    background-color: rgb(106, 222, 134);
+}
+
+.NoCurbRamp {
+    background-color: rgb(233, 42, 113);
+}
+
+.SurfaceProblem {
+    background-color: rgb(241, 171, 11);
+}
+
+.Obstacle {
+    background-color: rgba(0, 161, 203, 1);
+}
+
+.NoSidewalk {
+    background-color: rgba(179, 179, 179, 1);
+}
+
+.Other {
+    background-color: rgba(179, 179, 179, 1);
+}
+
+circle {
+    fill: #ffffff;
+    stroke: #000000;
+    stroke-width: 1;
+    cursor: pointer;
+    transition: 0.5s fill, 0.5s stroke-width;
+    z-index: 3000;
+}
+
+circle:hover {
+    fill: #F8FF7B;
+    stroke-width: 2;
+}
+
+/* Neighborhood Access Score Viz */
+
+#chart rect {
+    fill: #4aaeea;
+}
+
+#chart text {
+    fill: white;
+    font: 10px sans-serif;
+    text-anchor: end;
+}
+
+#container1 {
+    display: block;
+    height: 225px;
+    width: 275px;
+    padding: 5px;
+}
+
+.axis text {
+    font: 10px sans-serif;
+}
+
+.axis path,
+.axis line {
+    fill: none;
+    stroke: #000000;
+    shape-rendering: crispEdges;
+}
+
+#histogram-holder > g {
+    border: #000000 2px solid;
+    border-radius: 5px;
+}
+
+#container2 {
+    height: 180px;
+    width: 275px;
+    display: block;
+    padding: 5px;
+}
+
+/*...... */
+
+.bar {
+    fill: steelblue;
+    fill-opacity: .9;
+}
+
+.bar:hover {
+    fill: orange;
+}
+
+.axis--x path {
+    display: block;
+}
+
+#viz-holder {
+    width: 150px;
+    height: 350px;
+}
+
+/* Various Buttons */
+.btn {
+    position: relative;
+    margin-left: 10px;
+    padding: 10px;
+    border: none;
+    border-radius: 10px;
+    font-size: 15px;
+    text-align: center;
+    color: #fff;
+    background: #8B2635;
+    /*#BC6C25;*/
+    transition: 2s all;
+    cursor: pointer;
+}
+
+.btn:hover {
+    background: #703D57;
+    /*#EDB183;*/
+}
+
+#btn-close {
+    width: 200px;
+}
+
+.toggle-layer {
+    display: none;
+    /*block;*/
+    position: relative;
+    margin-left: 10px;
+    padding: 10px;
+    border: none;
+    border-radius: 10px;
+    font-size: 12px;
+    text-align: center;
+    color: #fff;
+    background: #ee8a65;
+}
+
+/* Back To Main Map Button */
+
+text.value {
+    font-size: 120%;
+    fill: white;
+}
+
+#btn-toggle-view {
+    position: fixed;
+    left: 0px;
+    top: 50%;
+    margin-top: -50px;
+    z-index: 9;
+    border: none;
+    border-radius: 0px 10px 10px 0px;
+    appearance: none;
+    cursor: pointer;
+    width: 100px;
+    height: 50px;
+    outline: none;
+    font-size: 15px;
+    color: #fff;
+    /*#D9B8C4;*/
+    transition: 2s all;
+    background-color: #8B2635;
+    /*#D5A021;*/
+}
+
+#btn-toggle-view:hover {
+    background-color: #703D57;
+    /*#EDB183;*/
+}

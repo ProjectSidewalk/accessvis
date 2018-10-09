@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset='utf-8' />
+    <title>AccessGeoVisDC: Interactive Visualization of Accessibility</title>
+    <meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
+    <!-- JS files -->
+    <script src="https://d3js.org/d3.v4.min.js" type="text/javascript"></script>
+    <script src="javascript/color.js" type="text/javascript"></script>
+    <script src="javascript/utility-functions.js" type="text/javascript"></script>
+    <script src='https://api.tiles.mapbox.com/mapbox-gl-js/v0.45.0/mapbox-gl.js'></script>
+    <script src='https://api.mapbox.com/mapbox.js/plugins/turf/v3.0.11/turf.min.js'></script>
+    <!-- CSS files -->
+    <link href='https://api.tiles.mapbox.com/mapbox-gl-js/v0.45.0/mapbox-gl.css' rel='stylesheet' />
+    <link href='stylesheet/main.css' rel='stylesheet' />
+</head>
+
+<body>
+    <div id='detail-pane'>
+        <button id="toggle-view" name="toggle-view" onclick="goToDetailView()">Back to Main Map</button>
+        <div id='detail-view-map'></div>
+    </div>
+    <!-- div map should come before the code that renders the map -->
+    <div id='map'></div>
+    <div id="info-box" class="info-box">
+        <p id="neighborhood-info"> Click on a neighborhood to know more about it! </p>
+        <p id="region_name"></p>
+        <p id="access_score"></p>
+    </div>
+    <br/>
+    <button id='reset-view' onclick="resetView()">Reset View</button> &nbsp;
+    <span id='toggle-buttons'>
+        <button id="toggle-neighorboods" class="toggle-layer" onclick="toggleLayers('as-neighborhoods')">Toggle Neighborhoods</button> &nbsp;
+        <button id="toggle-streets" class="toggle-layer" onclick="toggleLayers('streets')">Toggle Streets</button> &nbsp;
+        <button id="toggle-attributes" class="toggle-layer" onclick="toggleLayers('attribute-points')">Toggle Attribute Points</button>
+    </span>
+    <!-- Actual Mapbox+d3 magic starts! -->
+    <script>
+    /* Setting up the initial map on page load */
+
+    // Setting up toggle buttons functionality
+    var view = "map";
+    var boxStartlat;
+    var boxStartLng;
+    var boxStarted = false;
+    var previousData;
+    // City bounds
+    var southWest = new mapboxgl.LngLat(-77.140, 38.794),
+        northEast = new mapboxgl.LngLat(-76.911, 38.997),
+        cityBounds = new mapboxgl.LngLatBounds(southWest, northEast);
+
+    // Setup map
+    mapboxgl.accessToken = 'pk.eyJ1IjoibWFuYXN3aSIsImEiOiJjamg5c2hmZ2swZnpvMzhxZ28wcmhvb2NwIn0.MYu7KmIcoYH8k78mQh7wWA';
+    var minZoom = 11,
+        maxZoom = 18;
+    var map = new mapboxgl.Map({
+        container: 'map', // container id
+        style: 'mapbox://styles/mapbox/light-v8', // stylesheet location
+        center: [-77.039, 38.897], // starting position [lng, lat]
+        zoom: 5, // starting zoom
+        maxZoom: maxZoom
+    });
+
+    // Zoom-ins to the city bounds with "ease-in" zoom transition
+    map.fitBounds(cityBounds);
+
+    // Add zoom in/out controls
+    map.addControl(new mapboxgl.NavigationControl({ 'showCompass': false }))
+
+    // Full-screen visualization
+    //map.addControl(new mapboxgl.FullscreenControl());
+
+    var detailPane = d3.select('div#detail-pane')
+        .attr('class', 'hidden');
+
+    var layerApplied = {
+        "as-neighborhoods": false,
+        "streets": false,
+        "attribute-points": false,
+        "color-layer": false
+    };
+
+    // Use Mapbox to implement a D3 geometric transformation.
+    function projectPoint(lng, lat) {
+        var point = map.project(new mapboxgl.LngLat(lng, lat));
+        this.stream.point(point.x, point.y);
+    }
+
+    /* Connect mapboxgl+d3 and add d3 elements */
+
+    // Get Mapbox map canvas container
+    var canvas = map.getCanvasContainer();
+    // Overlay d3 on the map
+    var svg = d3.select(canvas)
+        .append("svg");
+    // .on("click", stopped, true);
+
+    var mapContainer = map.getContainer();
+    var width = mapContainer.getClientRects()[0].width,
+        height = mapContainer.getClientRects()[0].height;
+
+    var transform = d3.geoTransform({ point: projectPoint }),
+        path = d3.geoPath().projection(transform);
+
+    var tooltip = d3.select('body')
+        .append('div')
+        .attr('class', 'hidden tooltip');
+
+    var g = svg.append("g");
+
+    map.on('load', function() {
+
+        /* Draw Neighborhood Polygons */
+        drawNeighborhoods();
+    });
+
+    var neighborhoodsFeature;
+
+    function drawNeighborhoods() {
+        console.log("Drawing neighborhoods");
+        d3.json("data/neighborhoods.json", function(err, data) {
+
+            map.addSource("neighborhoods", {
+                "type": "geojson",
+                "data": data
+            });
+
+            // Border layer
+            map.addLayer({
+                'id': 'neighborhood-border',
+                'type': 'line',
+                'source': 'neighborhoods',
+                'paint': {
+                    'line-color': '#606C38', // Dark: '#ffffff',
+                    'line-width': 1,
+                    'line-opacity': 0.9,
+                    'line-dasharray': [2, 4]
+                }
+            });
+
+            // Fill layer
+            map.addLayer({
+                'id': 'neighborhood-fill',
+                'type': 'fill',
+                'source': 'neighborhoods',
+                'paint': {
+                    'fill-color': '#000fff',
+                    'fill-opacity': 0,
+                }
+            });
+
+            // Hover layer
+            map.addLayer({
+                "id": "neighborhood-fill-hover",
+                "type": "fill",
+                "source": 'neighborhoods',
+                "layout": {},
+                "paint": {
+                    "fill-color": "#BC6C25",
+                    "fill-opacity": 0.7
+                },
+                "filter": ["==", "region_id", ""]
+            });
+
+            var brush = d3.brush()
+                .on("start", function() {
+                    console.log("brush started");
+                    var d = d3.event.selection;
+                    var array = [d3.event.selection[0][0], d3.event.selection[0][1]];
+                    var arrayEnding = [d3.event.selection[1][0], d3.event.selection[1][1]];
+                    console.log(map.unproject(array));
+                    boxStartlat = map.unproject(array).lat;
+                    boxStartLng = map.unproject(array).lng;
+                })
+                .on("brush", function() {
+                    moved = true;
+                    /*if(!boxStarted) {
+                        console.log("box started");
+                        var array = [d3.event.selection[0][0], d3.event.selection[0][1]];
+                        var arrayEnding = [d3.event.selection[1][0], d3.event.selection[1][1]];
+                        boxStartlat = map.unproject(array).lat;
+                        boxStartLng = map.unproject(array).lng;
+                    }*/
+                })
+                .on("end", function(p) {
+                    console.log("box ended");
+                    var array = [d3.event.selection[0][0], d3.event.selection[0][1]];
+                    //console.log("starting = " + array);
+                    var arrayEnding = [d3.event.selection[1][0], d3.event.selection[1][1]];
+                    ///console.log(d3.event.selection);
+                    //console.log("brush ended");
+                    endingLng = map.unproject(arrayEnding).lng;
+                    endingLat = map.unproject(arrayEnding).lat;
+                    if (moved) {
+                        console.log("Changing box start lng in end function");
+                        boxStartlat = map.unproject(array).lat;
+                        boxStartLng = map.unproject(array).lng;
+                        moved = false;
+                    }
+                    fetchData(boxStartlat, boxStartLng, endingLat, endingLng);
+                })
+                .extent([
+                    [0, 0],
+                    [width, height]
+                ]);
+            
+            g.call(brush);
+            g.selectAll("brush").attr('class', 'brush').on("load", function() {
+                alert("loaded");
+            });
+    
+        });
+    }
+
+    map.setMinZoom(minZoom);
+
+    function plot(response) {
+        //alert("Called plot");
+        console.log(response);
+        var layerId = 'color-layer';
+
+        if (!previousData) {
+            previousData = response;
+            map.addSource('polygons', { type: 'geojson', data: response });
+            map.addLayer({
+                'id': layerId,
+                'type': 'fill',
+                'source': 'polygons',
+                'paint': {
+                    'fill-color': ['case', [">", ['number', ['get', 'score']],
+                        ['number', 0.5]
+                    ], 'rgba(200, 100, 240, 1)', 'rgba(120, 300, 150, 1)'],
+                    'fill-outline-color': '#606C38'
+                }
+            });
+
+            console.log("Plot called for the first time");
+            map.on('click', layerId, function(e) {
+                var area = document.getElementById("neighborhood-info");
+                area.innerHTML = "Showing information about selected neighborhood";
+                document.getElementById("region_name").innerHTML = e.features[0].properties.region_name;
+                document.getElementById("access_score").innerHTML = e.features[0].properties.score;
+
+                /*new mapboxgl.Popup()
+                    .setLngLat(e.lngLat)
+                    .setHTML(e.features[0].properties.region_name + " with score " + e.features[0].properties.score)
+                    .addTo(map);*/
+            });
+            layerApplied[layerId] = true;
+        } else {
+            console.log("plot called after first time");
+            previousData.features = previousData.features.concat(response.features);
+            console.log("changing source");
+            map.getSource('polygons').setData(previousData);
+        }
+    }
+
+
+    function fetchData(lat1, lng1, lat2, lng2) {
+        console.log("lat1 = " + lat1 + " ,lat2 = " + lat2 + " ,lng1  = " + lng1 + " ,lng2 = " + lng2);
+        fetch("https://cors-anywhere.herokuapp.com/http://sidewalk.umiacs.umd.edu/v1/access/score/neighborhoods?lat1=" + lat1 + "&lng1=" + lng1 + "&lat2=" + lat2 + "&lng2=" + lng2)
+            .then(checkStatus)
+            .then(JSON.parse)
+            .then(plot)
+            .catch(function(error) {
+                console.error("Error while getting data" + error);
+            });
+    }
+
+    function checkStatus(response) {
+        //console.log(response);
+        if (response.status >= 200 && response.status <= 300 || response.status == 0) {
+            //alert("Fetch call completed");
+            return response.text();
+        } else {
+            //console.log(response.status);
+            console.error("Promise rejected");
+        }
+    }
+    </script>
+</body>
+
+</html>

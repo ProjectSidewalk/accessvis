@@ -7,13 +7,13 @@ from forms import SignupForm
 from models import Signups
 from database import db_session
 
-app = Flask(__name__,static_url_path='/src/')
+app = Flask(__name__)
 app.secret_key = os.environ['APP_SECRET_KEY']
 
 # Routes
 @app.route('/')
 def root():
-    return app.send_static_file('index.html')
+    return redirect("static/index.html", code=302)
 
 
 if __name__ == '__main__':

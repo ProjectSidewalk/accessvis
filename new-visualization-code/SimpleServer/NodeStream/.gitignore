@@ -1,0 +1,4 @@
+*.ndjson
+RawData.csv
+RawData.json
+RawData2.json

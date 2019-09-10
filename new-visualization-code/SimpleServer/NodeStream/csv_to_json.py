@@ -8,9 +8,38 @@ df.to_json('RawData.json', orient='records')
 with open('RawData2.json', 'w') as f:
     json.dump({'Features': df.to_dict(orient='records')}, f, indent=4)
 '''
+
 with open("RawData.json", "r") as read_file:
     data = json.load(read_file)
-result = [json.dumps(record) for record in data]
+features = [record for record in data]
 with open('nd-RawData.ndjson', 'w') as obj:
-    for i in result:
-        obj.write(i+'\n')
+    #aggregate objects
+    count = 0
+    totalIndex = 0
+    featureCollection = {"type": "FeatureCollection", "features": []}
+    for result in features:
+        print("processing feature ", count+1, "/1000")
+        if count == 1000 or totalIndex == (len(features) - 1):
+            print("writing to file")
+            dump = json.dumps(featureCollection)
+            obj.write(dump + '\n')
+            count = 0
+            featureCollection = {"type": "FeatureCollection", "features": []}        
+            print("write complete", count, featureCollection)
+        featureCollection["features"].append(
+            {"type": "Feature", "properties": {
+                "Audit Task Id": result["Audit Task Id"],
+                "Label Id": result["Label Id"],
+                "Labey Type": result["Label Type"],
+                "Lat": result["Lat"],
+                "Lng": result["Lng"],
+                "Gsv Panorama Id": result["Gsv Panorama Id"],
+                "Severity": result["Severity"],                
+            }, "geometry": {
+                    "type": "Point",
+                    "coordinates": [result["Lng"], result["Lat"]]
+                }}
+        )
+        count+=1
+        totalIndex +=1
+print("processing complete ...")        

@@ -2,3 +2,5 @@
 RawData.csv
 RawData.json
 RawData2.json
+
+node_modules/*

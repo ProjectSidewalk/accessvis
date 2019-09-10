@@ -92,7 +92,7 @@ app.get('/api', (req, res) => {
         clearInterval(id);
         res.end();
       }
-    }, 1);
+    }, 5000);
   });
 })
 

@@ -83,16 +83,19 @@ app.get('/api', (req, res) => {
   readStream.on('data', (data) => {
       chunks.push(JSON.stringify(data));
   });
+  console.log("starting stream");
 
   readStream.on('end', () => {
     var id = setInterval(() => {
       if (chunks.length) {
         res.write(chunks.shift() + '\n');
+        console.log("writing chunk ")
       } else {
         clearInterval(id);
+        console.log("finished streaming");
         res.end();
       }
-    }, 5000);
+    }, 500);
   });
 })
 

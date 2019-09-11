@@ -17,6 +17,7 @@ with open('nd-RawData.ndjson', 'w') as obj:
     count = 0
     totalIndex = 0
     featureCollection = {"type": "FeatureCollection", "features": []}
+    point, curb = 1, 0    
     for result in features:
         print("processing feature ", count+1, "/1000")
         if count == 1000 or totalIndex == (len(features) - 1):
@@ -26,15 +27,15 @@ with open('nd-RawData.ndjson', 'w') as obj:
             count = 0
             featureCollection = {"type": "FeatureCollection", "features": []}        
             print("write complete", count, featureCollection)
+        
+        
         featureCollection["features"].append(
             {"type": "Feature", "properties": {
                 "Audit Task Id": result["Audit Task Id"],
                 "Label Id": result["Label Id"],
-                "Labey Type": result["Label Type"],
-                "Lat": result["Lat"],
-                "Lng": result["Lng"],
-                "Gsv Panorama Id": result["Gsv Panorama Id"],
-                "Severity": result["Severity"],                
+                "Label Type": result["Label Type"],                                
+                "Severity": result["Severity"],
+                "PointCount": point if result["Label Type"] != "CurbRamp" else curb
             }, "geometry": {
                     "type": "Point",
                     "coordinates": [result["Lng"], result["Lat"]]
@@ -42,4 +43,5 @@ with open('nd-RawData.ndjson', 'w') as obj:
         )
         count+=1
         totalIndex +=1
+print("processed", len(features), "items")
 print("processing complete ...")        

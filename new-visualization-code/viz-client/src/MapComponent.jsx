@@ -2,7 +2,9 @@ import React from "react";
 import ReactDOM from "react-dom";
 import L from "leaflet";
 import ndjsonStream from "can-ndjson-stream";
-import * as turf from "@turf/turf";
+import squareGrid from '@turf/square-grid';
+import collect from '@turf/collect';
+import pointsWithinPolygon from '@turf/points-within-polygon'
 
 import dcBounds from "./dc-boundary";
 
@@ -146,13 +148,13 @@ class MapComponent extends React.Component {
   gridMapViz = () => {
     //parameters to change for grid aggregation
     function getColor(d) {        
-      return d > 7 ? '#800026' :
-             d > 6  ? '#BD0026' :
-             d > 5  ? '#E31A1C' :
-             d > 4  ? '#FC4E2A' :
-             d > 3   ? '#FD8D3C' :
-             d > 2   ? '#FEB24C' :
-             d > 1  ? '#FED976' :
+      return d > 100 ? '#800026' :
+             d > 50  ? '#BD0026' :
+             d > 40  ? '#E31A1C' :
+             d > 30  ? '#FC4E2A' :
+             d > 20   ? '#FD8D3C' :
+             d > 10   ? '#FEB24C' :
+             d == 0  ? '#FFFFFF' :
                         '#FFEDA0';      
     }
 
@@ -170,7 +172,7 @@ class MapComponent extends React.Component {
         style: function style(feature) {
           return {
             weight: 2,
-            fillColor: getColor(feature.properties.PointCount),
+            fillColor: getColor(feature.properties.pointCount),
             opacity: 1,
             color: "white",
             fillOpacity: 0.7
@@ -191,39 +193,22 @@ class MapComponent extends React.Component {
       var units = "kilometers";
        var options = {
         units: units,
+        mask: mask
       };
 
-      var grid = turf.squareGrid(bbox, cellSide, options);
+      var grid = squareGrid(bbox, cellSide, options);
       console.log(grid);
-      console.log("finished generating grid, loading onto map");      
-
-      console.log(this.state.points);
-      var count = turf.collect(grid, this.state.points, "PointCount", "PointCount");
-      console.log(count);
-
-      L.geoJSON(count, sidewalkGridStyle).addTo(this.state.map);
-
-      /*
-      //polygon to mask the turf grid
-      const dcPolygon = turf.polygon(
-        dcBounds.features[0].geometry["coordinates"]
-      );
-      console.log(dcPolygon);
-       
-
-      //settings
-      const cellWidth = 1;
-      const units = "kilometers";
-      const bbox = turf.bbox(dcBounds);
-
-      //generating the squareGrid
-      const squareGrid = turf.squareGrid(bbox, cellWidth, units, {
-        mask: dcBounds
+      console.log("finished generating grid, loading onto map");  
+      const len = grid.features.length;          
+      grid.features.forEach((feature, index) => {      
+        const pointCount = pointsWithinPolygon(this.state.points, feature).features.length;
+        console.log(feature, index, "/", len, "point count = ", pointCount);
+        feature.properties["pointCount"] = pointCount;
       });
 
-      //adding to the map stored in state
-      L.geoJson(squareGrid, sidewalkGridStyle).addTo(this.state.map);
-       */
+      console.log(grid);
+      L.geoJSON(grid, sidewalkGridStyle).addTo(this.state.map);
+      console.log("finished adding grid");
     }
   };
 

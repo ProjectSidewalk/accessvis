@@ -95,7 +95,7 @@ app.get('/api', (req, res) => {
         console.log("finished streaming");
         res.end();
       }
-    }, 500);
+    }, 1);
   });
 })
 

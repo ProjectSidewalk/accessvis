@@ -10,12 +10,19 @@ const dcBounds = {
         coordinates: [
           [
             [
-              [-77.0353, 38.9939],
+              //north corner
+              [-77.0410235, 38.9958524],
+              //midway of NE boundary
               [-77.0024, 38.9665],
-              [-76.9093, 38.8953],
+              //east corner
+              [-76.909366,38.8928623],
+              //south corner
               [-77.0407, 38.7912],
+              //concave edge of SW boundary
               [-77.0462, 38.8405],
+              //midway of SW boundary
               [-77.0407, 38.8734],
+              //west corner
               [-77.1174, 38.9336]
             ]
           ]

@@ -9,7 +9,7 @@ class ControlPanel extends Component {
   render() {
     return (
       <div style={{ justifyContent: "flex-end" }}>
-        <MapComponent />
+        <MapComponent clustered={true} excludecurbs={true} />
       </div>
     );
   }

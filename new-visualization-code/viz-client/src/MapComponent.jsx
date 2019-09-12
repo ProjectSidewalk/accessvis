@@ -7,11 +7,10 @@ import collect from '@turf/collect';
 import pointsWithinPolygon from '@turf/points-within-polygon'
 
 import dcBounds from "./dc-boundary";
+import querySidwalkData from "./utils/querySidewalkData";
 
-const LegendControl = function LegendControl(props) {
-  console.log("legend rendered", props.pointsLoad);
-  if(props.pointsLoad){
-    console.log('reached');
+const LegendControl = function LegendControl(props) {  
+  if(props.pointsload){    
     const jsx = <div {...props}>{props.children}</div>;
     L.Control.legend = L.Control.extend({
       onAdd: function(map) {
@@ -44,11 +43,21 @@ class MapComponent extends React.Component {
   state = {
     points: [],
     map: null,
-    pointsLoaded: false
+    pointsLoad: false,
+    gridVizOn: false,
   };
 
   async fetchNdjson() {
-    fetch("http://localhost:5555/api") // make a fetch request to a NDJSON stream service
+    if(this.props.clustered){
+      if(this.props.excludecurbs){
+        console.log("exclude curbs");
+        querySidwalkData(3);
+      } else {
+        console.log("don't exclude curbs");
+        querySidwalkData();
+      }
+    } else {
+      fetch("http://localhost:5555/api") // make a fetch request to a NDJSON stream service
       .then(response => {
         return ndjsonStream(response.body); //ndjsonStream parses the response.body
       })
@@ -59,7 +68,7 @@ class MapComponent extends React.Component {
           (read = result => {
             if (result.done) {
               //get geojson and set to state              
-              this.setState({ points: this.geojson.toGeoJSON(), pointsLoaded: true });
+              this.setState({ points: this.geojson.toGeoJSON(), pointsLoad: true });
               return;
             }
             //load point by point onto map
@@ -70,6 +79,7 @@ class MapComponent extends React.Component {
           })
         );
       });
+    }    
   }
 
   componentWillMount() {}
@@ -209,15 +219,30 @@ class MapComponent extends React.Component {
       console.log(grid);
       L.geoJSON(grid, sidewalkGridStyle).addTo(this.state.map);
       console.log("finished adding grid");
+
+      //get the gridViz button and disable it to prevent more grids from being added
+      /*const button = document.getElementById("gridViz");
+      button.disabled = true;*/
+
+      //remove the points layer
+      
+
+      //this will probably break the code
+      this.setState({gridVizOn: true, pointsLoad: false});
     }
   };
+
+  handleTest = () => {
+    querySidwalkData();
+  }
 
   render() {    
     return (
       <div id="map">
-        <LegendControl className="supportLegend" map={this.state.map} pointsLoad={this.state.pointsLoaded}>
+        <LegendControl className="supportLegend" map={this.state.map} pointsload={this.state.pointsLoad}>
           <h1>This is a Test</h1>
-          <button onClick={this.gridMapViz}>Show Grid Viz</button>
+          <button id="gridViz" disabled={this.state.gridVizOn} onClick={this.gridMapViz}>Show Grid Viz</button>
+          <button id="retrieveSideWalkData" onClick={this.handleTest}>Get Sidewalk Data</button>
         </LegendControl>
       </div>
     );

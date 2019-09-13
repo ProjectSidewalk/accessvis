@@ -49,14 +49,34 @@ class MapComponent extends React.Component {
 
   async fetchNdjson() {
     if(this.props.clustered){
-      if(this.props.excludecurbs){
-        console.log("exclude curbs");
-        querySidwalkData(3);
-      } else {
-        console.log("don't exclude curbs");
-        querySidwalkData();
-      }
+      const lat1=38.794, lng1=-77.14, lat2=38.997, lng2=-76.891;
+        //const lat1 = 38.884832, lng1 = -77.026726, lat2 = 38.882803, lng2 = -77.023405;
+        const url = 
+        "https://sidewalk-dc.cs.washington.edu/v2/access/attributes?lat1=" + lat1 + 
+                                                                   "&lng1=" + lng1 + 
+                                                                   "&lat2=" + lat2 + 
+                                                                   "&lng2=" + lng2;        
+      fetch(url)
+          .then(response => {
+              return response.json();
+          })
+          .then(data => {
+              if(this.props.excludecurbs) {
+                  //watch out: query returns property as label_type
+                  //excludes curbRamps
+                  data.features = data.features.filter(function(feature) 
+                    {return feature.properties["label_type"] !== "CurbRamp" && feature.properties["label_type"] !== "NoSidewalk"}
+                  );
+                  console.log(data);
+              }            
+              return data;
+          })
+            .then(data => {              
+              this.geojson.addData(data);
+              this.setState({points: data, pointsLoad: true});
+            });      
     } else {
+      //local data
       fetch("http://localhost:5555/api") // make a fetch request to a NDJSON stream service
       .then(response => {
         return ndjsonStream(response.body); //ndjsonStream parses the response.body
@@ -111,7 +131,7 @@ class MapComponent extends React.Component {
       ]
     });
     function getColor(feature) {
-      switch (feature["properties"]["Label Type"]) {
+      switch (feature["properties"]["label_type"]) {
         case "CurbRamp":
           return "#8fc194";
         case "Problem":
@@ -122,7 +142,11 @@ class MapComponent extends React.Component {
           return "#f36c10";
         case "Obstacle":
           return "#6592d6";
+        case "Occlusion":
+          //find color for occlusion
+          return "#FF0000"
         default:
+          console.log(feature);
           return "#FFF";
       }
     }
@@ -157,6 +181,9 @@ class MapComponent extends React.Component {
   //generates the grid visualization
   gridMapViz = () => {
     //parameters to change for grid aggregation
+    
+    //Johnson's style
+    /*
     function getColor(d) {        
       return d > 100 ? '#800026' :
              d > 50  ? '#BD0026' :
@@ -164,8 +191,19 @@ class MapComponent extends React.Component {
              d > 30  ? '#FC4E2A' :
              d > 20   ? '#FD8D3C' :
              d > 10   ? '#FEB24C' :
-             d == 0  ? '#FFFFFF' :
+             d === 0  ? '#FFFFFF' :
                         '#FFEDA0';      
+    }*/
+
+    //yellow-red scale
+    function getColor(d) {        
+      return d > 50 ? '#BD1527' :
+             d > 30  ? '#F03B20' :
+             d > 20  ? '#FE8D3A' :
+             d > 15  ? '#FFB24B' :
+             d > 10   ? '#FED975' :
+             d > 5   ? '#FFFFB3' :             
+                        '#FFFFFF';      
     }
 
     if (this.state.map) {
@@ -181,16 +219,16 @@ class MapComponent extends React.Component {
       var sidewalkGridStyle = {
         style: function style(feature) {
           return {
-            weight: 2,
+            weight: 0, //2 
             fillColor: getColor(feature.properties.pointCount),
-            opacity: 1,
+            opacity: 0, //1
             color: "white",
-            fillOpacity: 0.7
+            fillOpacity: feature.properties.pointCount > 0 ? 0.9 : 0
           };
         }
       };
 
-      var dcLayer = L.geoJSON(dcBounds).addTo(this.state.map);      
+      var dcLayer = L.geoJSON(dcBounds);      
 
       //GRID
       var bbox = dcLayer

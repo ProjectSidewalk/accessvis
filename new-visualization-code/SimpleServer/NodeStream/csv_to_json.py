@@ -33,7 +33,7 @@ with open('nd-RawData.ndjson', 'w') as obj:
             {"type": "Feature", "properties": {
                 "Audit Task Id": result["Audit Task Id"],
                 "Label Id": result["Label Id"],
-                "Label Type": result["Label Type"],                                
+            "label_type": result["Label Type"],                                
                 "Severity": result["Severity"],
                 "PointCount": point if result["Label Type"] != "CurbRamp" else curb
             }, "geometry": {

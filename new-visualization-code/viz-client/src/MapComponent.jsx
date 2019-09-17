@@ -3,13 +3,17 @@ import ReactDOM from "react-dom";
 import L from "leaflet";
 import ndjsonStream from "can-ndjson-stream";
 import squareGrid from '@turf/square-grid';
-import collect from '@turf/collect';
 import pointsWithinPolygon from '@turf/points-within-polygon'
 
-import dcBounds from "./dc-boundary";
+import dcBounds from "./utils/dc-boundary";
+import orangeRedScale from './utils/colorScales';
 import querySidwalkData from "./utils/querySidewalkData";
 
-const LegendControl = function LegendControl(props) {  
+const LegendControl = function LegendControl(props) {    
+  //this will be called on every setstate
+  //add renderGridLegend here
+
+  console.log("render call");
   if(props.pointsload){    
     const jsx = <div {...props}>{props.children}</div>;
     L.Control.legend = L.Control.extend({
@@ -103,7 +107,7 @@ class MapComponent extends React.Component {
   }
 
   componentWillMount() {}
-
+  
   componentDidMount() {
     // create map
     var southWest = L.latLng(38.794, -77.14),
@@ -195,32 +199,24 @@ class MapComponent extends React.Component {
                         '#FFEDA0';      
     }*/
 
-    //yellow-red scale
-    function getColor(d) {        
-      return d > 50 ? '#BD1527' :
-             d > 30  ? '#F03B20' :
-             d > 20  ? '#FE8D3A' :
-             d > 15  ? '#FFB24B' :
-             d > 10   ? '#FED975' :
-             d > 5   ? '#FFFFB3' :             
-                        '#FFFFFF';      
+    //modularized getColor
+    function getColor(d, colorScale) {        
+      const { colors } = colorScale;
+      for (const color of colors) {
+        if(d > color.val) {
+          return color.color;
+        }
+      }
+
     }
 
-    if (this.state.map) {
-      var b = this.state.map.getBounds();
-      var extend = [
-        b.getSouthWest().lng,
-        b.getSouthWest().lat,
-        b.getNorthEast().lng,
-        b.getNorthEast().lat
-      ];
-
+    if (this.state.map) {      
       //grid layer creation
       var sidewalkGridStyle = {
         style: function style(feature) {
           return {
             weight: 0, //2 
-            fillColor: getColor(feature.properties.pointCount),
+            fillColor: getColor(feature.properties.pointCount, orangeRedScale),
             opacity: 0, //1
             color: "white",
             fillOpacity: feature.properties.pointCount > 0 ? 0.9 : 0
@@ -279,8 +275,7 @@ class MapComponent extends React.Component {
       <div id="map">
         <LegendControl className="supportLegend" map={this.state.map} pointsload={this.state.pointsLoad}>
           <h1>This is a Test</h1>
-          <button id="gridViz" disabled={this.state.gridVizOn} onClick={this.gridMapViz}>Show Grid Viz</button>
-          <button id="retrieveSideWalkData" onClick={this.handleTest}>Get Sidewalk Data</button>
+          <button id="gridViz" disabled={this.state.gridVizOn} onClick={this.gridMapViz}>Show Grid Viz</button>                    
         </LegendControl>
       </div>
     );

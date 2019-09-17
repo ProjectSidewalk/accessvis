@@ -5,6 +5,7 @@ import ndjsonStream from "can-ndjson-stream";
 import squareGrid from "@turf/square-grid";
 import pointsWithinPolygon from "@turf/points-within-polygon";
 import "bootstrap/dist/css/bootstrap.css";
+import { ProgressBar } from "react-bootstrap";
 
 import dcBounds from "./utils/dc-boundary";
 import colorScales from "./utils/colorScales";
@@ -72,6 +73,7 @@ class MapComponent extends React.Component {
     points: [],
     map: null,
     pointsLoad: false,
+    gridLoading: false,
     gridVizOn: false
   };
 
@@ -219,13 +221,12 @@ class MapComponent extends React.Component {
   }
 
   gridMapViz = () => {
+    this.setState({ gridLoading: true, gridVizOn: true, pointsLoad: false });
     //generates the grid visualization
     //modularized getColor
     const getColor = (d, colorScales) => {
-      const orangeRedScale = colorScales;
-      const { colors } = orangeRedScale;
-      console.log(colors);
-      for (const color of colors) {
+      const scale = colorScales.orangeRedScale.colors;
+      for (const color of scale) {
         if (d > color.val) {
           return color.color;
         }
@@ -283,8 +284,8 @@ class MapComponent extends React.Component {
 
       //remove the points layer
 
-      //save the state
-      this.setState({ gridVizOn: true, pointsLoad: false });
+      //turn off progressBar
+      this.setState({ gridLoading: false });
     }
   };
 
@@ -297,7 +298,7 @@ class MapComponent extends React.Component {
           pointsload={this.state.pointsLoad}
           gridon={this.state.gridVizOn}
         >
-          <h1>This is a Test</h1>
+          <h3 style={{ color: "#FFF" }}>Legend</h3>
           <button
             id="gridViz"
             disabled={this.state.gridVizOn}
@@ -307,6 +308,7 @@ class MapComponent extends React.Component {
           </button>
           <div id="colorLegend"></div>
         </LegendControl>
+        <ProgressBar now={60} style={{ zIndex: 999999999999999 }}></ProgressBar>
       </div>
     );
   }

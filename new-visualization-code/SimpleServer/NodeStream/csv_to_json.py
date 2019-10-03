@@ -1,10 +1,10 @@
 import pandas
 import json
 
-'''
-df = pandas.read_csv('./RawData.csv', names=("Audit Task Id","Label Id","Label Type","Lat","Lng","Gsv Panorama Id","Severity","Canvas X","Canvas Y","Deleted","Description","Geom","Heading","Label Point Id","Panorama Lat","Panorama Lng","Photographer Heading","Photographer Pitch","Pitch","Problem Description Id","Sv Image X","Sv Image Y"))
-df.to_json('RawData.json', orient='records')
 
+df = pandas.read_csv('./RawData.csv', names=("Table Name","Audit Task Id","Label Id","Label Type","Lat","Lng","Gsv Panorama Id","Severity","Canvas X","Canvas Y","Deleted","Description (Problem Description)","Description","Geom","Heading","Label Point Id","Panorama Lat","Panorama Lng","Photographer Heading","Photographer Pitch","Pitch","Problem Description Id","Sv Image X","Sv Image Y"))
+df.to_json('RawData.json', orient='records')
+'''
 with open('RawData2.json', 'w') as f:
     json.dump({'Features': df.to_dict(orient='records')}, f, indent=4)
 '''
@@ -34,8 +34,7 @@ with open('nd-RawData.ndjson', 'w') as obj:
                 "Audit Task Id": result["Audit Task Id"],
                 "Label Id": result["Label Id"],
             "label_type": result["Label Type"],                                
-                "Severity": result["Severity"],
-                "PointCount": point if result["Label Type"] != "CurbRamp" else curb
+                "Severity": result["Severity"],                
             }, "geometry": {
                     "type": "Point",
                     "coordinates": [result["Lng"], result["Lat"]]

@@ -19,7 +19,9 @@ const LegendControl = function LegendControl(props) {
         {colorScales.orangeRedScale.colors.map((obj, index) => {
           return (
             <div className="row" key={index}>
-              <div className="col">{obj.val}:</div>
+              <div className="col" style={{ color: "white" }}>
+                {obj.val}:
+              </div>
               {/*This approach below is not mobile friendly */}
               <div className="col">
                 <div
@@ -107,7 +109,6 @@ class MapComponent extends React.Component {
                 feature.properties["label_type"] !== "NoSidewalk"
               );
             });
-            console.log(data);
           }
           return data;
         })
@@ -135,8 +136,7 @@ class MapComponent extends React.Component {
                 return;
               }
               //load point by point onto map
-              const point = result.value; //returns a geojson object
-              console.log(point);
+              const point = result.value; //returns a geojson object              
               this.geojson.addData(point);
               reader.read().then(read);
             })
@@ -156,7 +156,8 @@ class MapComponent extends React.Component {
     this.map = L.map("map", {
       center: [-77.039, 38.897],
       zoom: 2,
-      maxZoom: 16,
+      maxZoom: 20,
+      minZoom: 2,
       preferCanvas: true,
       layers: [
         L.tileLayer(
@@ -167,8 +168,8 @@ class MapComponent extends React.Component {
             id: "cjtub9evh13m91fp3bo9zbvy2",
             accessToken:
               "pk.eyJ1IjoibWFuYXN3aSIsImEiOiJjamg5c2hmZ2swZnpvMzhxZ28wcmhvb2NwIn0.MYu7KmIcoYH8k78mQh7wWA",
-            updateWhenZooming: false,
-            updateWhenIdle: true
+            //updateWhenZooming: false,
+            //updateWhenIdle: true
           }
         )
       ]
@@ -189,7 +190,6 @@ class MapComponent extends React.Component {
           //find color for occlusion
           return "#FF0000";
         default:
-          console.log(feature);
           return "#FFF";
       }
     }
@@ -199,7 +199,7 @@ class MapComponent extends React.Component {
     this.geojson = L.geoJSON([], {
       pointToLayer: function(feature, latlng) {
         return L.circleMarker(latlng, {
-          radius: 2,
+          radius: 3,
           fillColor: getColor(feature),
           color: "#fff",
           weight: 0.5,
@@ -264,7 +264,6 @@ class MapComponent extends React.Component {
       };
 
       var grid = squareGrid(bbox, cellSide, options);
-      console.log(grid);
       console.log("finished generating grid, loading onto map");
       const len = grid.features.length;
       grid.features.forEach((feature, index) => {
@@ -274,7 +273,6 @@ class MapComponent extends React.Component {
         feature.properties["pointCount"] = pointCount;
       });
 
-      console.log(grid);
       L.geoJSON(grid, sidewalkGridStyle).addTo(this.state.map);
       console.log("finished adding grid");
 
